@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+
+<html lang="it" data-theme="dark"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>AudIT</title>
+
+<style>
+	* { overflow-x: hidden; }
+	
+	:root {
+		--bg: #0f0f0f;
+		--surface: #1e1e1e;
+		--text: #e0e0e0;
+		--border: #333;
+		--accent: #4a90e2;
+	}
+	body {
+		margin: 0;
+		padding: 0;
+		background: var(--bg);
+		color: var(--text);
+		font-family: Segoe UI, sans-serif;
+		line-height: 1.4;
+	}
+	
+	.page-header {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		z-index: 100;
+		background: var(--bg);
+		border-bottom: 1px solid var(--border);
+		box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+		padding: 5px 20px;
+	    padding-right: 5px;
+	}
+	
+	.page-header h1 {
+		margin: 0 0 12px 0;
+		font-size: 1.8rem;
+	}
+	
+	.buttons {
+		display: flex;
+		gap: 12px;
+		flex-wrap: wrap;
+		margin-bottom: 12px;
+	}
+	
+	button {
+		padding: 10px 20px;
+		font-size: 1rem;
+		background: #252525;
+		color: #fff;
+		border: 1px solid #444;
+		border-radius: 6px;
+		cursor: pointer;
+	}
+	button:hover { background: #333; }
+	button.sortAlphabetically { background: #01486f; }
+	button.sort         { background: #02679e; }
+	button.sortByStatus { background: #0288d1; }
+	button.freeze       { background: #956a8d; }
+	button.edit         { background: #2e7d32; }
+	button.reset-values { background: #e4761b; }
+	button.reset-status { background: #8C1130; }
+	button.reset-sheet  { background: #ffffff; color: #000000; }
+	
+	.header-table {
+		width: 100%;
+		table-layout: fixed;
+		border-collapse: collapse;
+		background: var(--surface);
+	}
+	.header-table th {
+		border: 1px solid var(--border);
+		padding: 10px;
+		text-align: center;
+		background: #252525;
+		font-weight: 600;
+		text-transform: uppercase;
+		font-size: 1rem;
+	}
+	
+	.main-content {
+		margin-top: 190px;
+		padding: 0 20px 20px 20px;
+	}
+	
+	.container {
+		overflow-x: none;
+		border: 1px solid var(--border);
+		border-radius: 8px;
+	}
+	
+	#sheet {
+		border-collapse: collapse;
+		width: 100%;
+		max-width: 2200px;
+		background: var(--surface);
+		table-layout: fixed;
+	}
+	
+	#sheet th, #sheet td {
+		border: 1px solid var(--border);
+		padding: 8px 10px;
+	}
+	
+	col.desc     { width: 108px; }
+	col.cat      { width: 235px; }
+	col.num      { width:  70px; text-align: center; }
+	col.mena     { width: 235px; }
+	col.total    { width:  80px; text-align: center; font-weight: bold; }
+	col.prev     { width: 235px; }
+	col.resp     { width: 235px; }
+	col.action   { width: 115px; text-align: center; }
+	col.notes    { width: 125px; text-align: center; }
+	
+	td[contenteditable] {
+		white-space: normal;
+		word-wrap: break-word;
+		min-height: 2.4em;
+		cursor: text;
+		text-align: justify;
+	}
+	td[contenteditable]:focus {
+		outline: 1px solid var(--accent);
+		background: #222;
+	}
+	
+	select {
+		background: #2a2a2a;
+		color: var(--text);
+		border: 1px solid var(--border);
+		padding: 5px;
+		width: 100%;
+		border-radius: 4px;
+	}
+	select:focus { border-color: var(--accent); outline: none; }
+	
+	.static-value { font-weight: bold; text-align: center; }
+	
+	.done-yes { color: #4caf50; font-size: 1.4em; padding-left: 0px; }
+	.done-no  { color: #f44336; font-size: 1.4em; padding-left: 0px; }
+	
+	tr:hover { background: #2a2a2a; }
+	
+	.total-0-4   { color: #fbfb04; text-align: center; }
+	.total-5-8   { color: #fb923c; text-align: center; }
+	.total-9plus { color: #ef4444; text-align: center; }
+	
+	footer {
+      padding: 2rem 2rem;
+    }
+
+    .footer-content {
+      max-width: 1900px;
+      margin: 0 auto;
+      border: 3px solid #F5E427;
+      border-radius: 12px;
+      padding: 2rem;
+      background: rgba(255,255,255,0.08);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+
+    .footer-content h3 {
+      margin-top: 0;
+      color: #F5E427;
+    }
+	
+	html {
+		scroll-behavior: smooth;
+	}
+	
+	.back-to-top {
+		display: inline-block;
+		background: #F5E427;
+		color: black;
+		padding: 0.2rem 0.5rem;
+		border-radius: 50px;
+		text-decoration: none;
+		font-weight: 600;
+		box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+		transition: all 0.22s ease;
+	}
+		
+	.back-to-top:hover,
+	.back-to-top:focus {
+		background: #AC79E2;
+		color: #FFFFFF;
+		box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+	}
+	
+	/* Default text color for first column (Description) */
+	td:nth-child(1) {
+	color: var(--text);  /* or whatever your default is, e.g. #e0e0e0 */
+	}
+	/* When status is "yes" → green text in first column */
+	tr:has(.done-yes) td:nth-child(1) {
+	color: #4caf50 !important;
+	}
+	/* When status is "no" → red text in first column */
+	tr:has(.done-no) td:nth-child(1) {
+	color: #f44336 !important;
+</style>
+</head>
+
+<body>
+<div class="page-header">
+    <h1 style="text-align: center; margin-bottom: 0px;">Aud-IT</h1>
+	<nav style="margin-bottom: 10px;">
+		<a id="footer-link" href="" class="back-to-top">ISTRUZIONI PER L'USO</a>
+		<script>document.getElementById("footer-link").href = "#footer"</script>
+    </nav>
+	
+    <div class="buttons">
+		<button class="sortAlphabetically" onclick="sortAlphabetically()">Ordina per contesto</button>
+		<button class="sort" onclick="sortByTotal()">Ordina per rischio</button>
+		<button class="sortByStatus" onclick="sortByStatus()">Ordina per conformità</button>
+		<button class="freeze" onclick="freezeValues()" style="display: none;"><b>Blocca valori</b></button>
+		<button class="edit" onclick="editValues()" style="display: inline-block;">Modifica valori</button>
+		<button class="reset-values" onclick="resetValues()">Azzera valori</button>
+		<button class="reset-status" onclick="resetStatus()">Azzera conformità</button>
+		<button class="reset-sheet" onclick="resetSheet()"><b>Resetta tutto</b></button>
+    </div>
+
+    <table class="header-table">
+		<colgroup>
+			<col class="desc">
+			<col class="cat">
+			<col class="num">
+			<col class="mena">
+			<col class="num">
+			<col class="total">
+			<col class="prev">
+			<col class="resp">
+			<col class="action">
+			<col class="notes">
+		</colgroup>
+		<thead>
+			<tr>
+				<th>Contesto</th>
+				<th>Scenario</th>
+				<th>Rile-<br>vanza</th>
+				<th>Minaccia</th>
+				<th>Proba-<br>bilità</th>
+				<th>Rischio</th>
+				<th>Azione preventiva</th>
+				<th>Reazione e recupero</th>
+				<th>Conformità<br>attuale</th>
+				<th>Note</th>
+			</tr>
+		</thead>
+    </table>
+  </div>
+
+  <div class="main-content" style="padding-top: 20px; padding-right: 5px;">
+		<div class="container">
+			<table id="sheet">
+				<colgroup>
+				<col class="desc">
+				<col class="cat">
+				<col class="num">
+				<col class="mena">
+				<col class="num">
+				<col class="total">
+				<col class="prev">
+				<col class="resp">
+				<col class="action">
+				<col class="notes">
+				</colgroup>
+				<tbody id="tbody"><tr><td contenteditable="true">Accesso fisico 1 - dispositivo personale</td><td contenteditable="true">Dispositivo lasciato acceso mentre l'utente è lontano</td><td><span class="static-value">0</span></td><td contenteditable="true">Persone non autorizzate accedono al dispositivo</td><td><span class="static-value">0</span></td><td class="result-cell"></td><td contenteditable="true">- Logout dal profilo<br>- usare USB come dispositivo di sblocco profilo<br>- spostare file importanti su periferica esterna, da portare con sé o archiviare in posto sicuro<br>- spegnere il dispositivo, se è impostata richiesta password all'avvio<br></td><td contenteditable="true">Controllo attività recente: event viewer, file temporanei, cronologia&nbsp; browser e file (e USB)</td><td style="align-items: center; gap: 12px; justify-content: center;">
+        <button onclick="toggleDone(this)" style="padding: 10px 10px;">stato</button>
+        <span class="done-no" ;="" style="padding-left: 10px"> ✗</span>
+      </td><td contenteditable="true"></td></tr><tr><td contenteditable="true">Accesso fisico 2 - dispositivo personale</td><td contenteditable="true">Dispositivo utilizzato in posti condivisi con altre persone</td><td><span class="static-value">0</span></td><td contenteditable="true">Furto dispositivo acceso, con conseguente accesso ai dati</td><td><span class="static-value">0</span></td><td class="result-cell"></td><td contenteditable="true">- uso Kensington lock<br>- screensaver con password o altre interazioni richiedenti autenticazione</td><td contenteditable="true">- Disconnessione del profilo utente tramite altro dispositivo<br>- remote block, remote wiping (a seconda dei casi), se disponibili</td><td style="align-items: center; gap: 12px; justify-content: center;">
+        <button onclick="toggleDone(this)" style="padding: 10px 10px;">stato</button>
+        <span class="done-no" ;="" style="padding-left: 10px"> ✗</span>
+      </td><td contenteditable="true"></td></tr><tr><td contenteditable="true">Accesso fisico 3 - dispositivo personale</td><td contenteditable="true">Dispositivo utilizzato in posti condivisi con altre persone</td><td><span class="static-value">0</span></td><td contenteditable="true">Furto dispositivo spento, con conseguente accesso ai dati</td><td><span class="static-value">0</span></td><td class="result-cell"></td><td contenteditable="true">- Cifratura disco e file importanti<br>- abilitare login utente con password<br>- secure boot/bios<br>- eseguire sempre il logout dagli account<br>- disabilitare eventuale auto-completamento credenziali<br>- cancellare cookies alla chiusura del browser</td><td contenteditable="true">- Disconnessione del profilo utente tramite altro dispositivo<br>- remote block, remote wiping (a seconda dei casi), se disponibili</td><td style="align-items: center; gap: 12px; justify-content: center;">
+        <button onclick="toggleDone(this)" style="padding: 10px 10px;">stato</button>
+        <span class="done-no" ;="" style="padding-left: 10px"> ✗</span>
+      </td><td contenteditable="true"></td></tr><tr><td contenteditable="true">Accesso fisico 4 - dispositivo condiviso</td><td contenteditable="true">Dispositivo condiviso con altri utenti</td><td><span class="static-value">0</span></td><td contenteditable="true">Account con privilegi maggiori accede a dati</td><td><span class="static-value">0</span></td><td class="result-cell"></td><td contenteditable="true">- Cifrare dati personali<br>- tenerli in account cloud o periferiche esterne<br>- disabilitare eventuale auto-completamento credenziali<br>- eseguire sempre il logout dagli account<br>- cancellare cronologia, cookies ed eventuali password o informazioni salvate nei browser</td><td contenteditable="true">- Controllare integrità dati e file da ultimo accesso o esecuzione;<br>- rintracciare eventuali usi impropri di applicazioni o informazioni</td><td style="align-items: center; gap: 12px; justify-content: center;">
+        <button onclick="toggleDone(this)" style="padding: 10px 10px;">stato</button>
+        <span class="done-no" ;="" style="padding-left: 10px"> ✗</span>
+      </td><td contenteditable="true"></td></tr><tr><td contenteditable="true">Accesso fisico 5 - dispositivo personale</td><td contenteditable="true">Dispositivo condiviso con altri utenti</td><td><span class="static-value">0</span></td><td contenteditable="true">Il dispositivo o un profilo vengono compromessi tramite altri account</td><td><span class="static-value">0</span></td><td class="result-cell"></td><td contenteditable="true">- Cifrare dati personali<br>- disabilitare eventuale auto-completamento<br>- eseguire sempre il logout<br>- cancellare cronologia, cookies ed eventuali password o informazioni salvate nei browser</td><td contenteditable="true">Ripristinare backup dati dopo sanificazione dispositivo</td><td style="align-items: center; gap: 12px; justify-content: center;">
+        <button onclick="toggleDone(this)" style="padding: 10px 10px;">stato</button>
+        <span class="done-no" ;="" style="padding-left: 10px"> ✗</span>
+      </td><td contenteditable="true"></td></tr><tr><td contenteditable="true">Browser (accesso siti) 1</td><td contenteditable="true">Login a siti pertinenti dati importanti (home banking, SPID, etc.)</td><td><span class="static-value">0</span></td><td contenteditable="true">Accesso a siti di phishing, con conseguente compromissione del profilo, perdita dati o denaro</td><td><span class="static-value">0</span></td><td class="result-cell"></td><td contenteditable="true">- Controllare di accedere al sito legittimo, usando segnalibri verificati o link contenuti in documenti ufficiali<br>- usare 2FA</td><td contenteditable="true">- Contattare telefonicamente o tramite altro dispositivo (o di persona) il gestore del servizio compromesso, per bloccare l'account e eventuali operazioni in corso<br>- Ripristinare l'accesso al profilo tramite il gestore del servizio, cambiare le credenziali e abilitare 2FA</td><td style="align-items: center; gap: 12px; justify-content: center;">
+        <button onclick="toggleDone(this)" style="padding: 10px 10px;">stato</button>
+        <span class="done-no" ;="" style="padding-left: 10px"> ✗</span>
+      </td><td contenteditable="true"></td></tr><tr><td contenteditable="true">Browser (estensioni) 1</td><td contenteditable="true">Estensioni attive nel browser</td><td><span class="static-value">0</span></td><td contenteditable="true">Estensioni malevole o compromesse rubano le credenziali di accesso, cookies o eseguono codice malevolo</td><td><span class="static-value">0</span></td><td class="result-cell"></td><td contenteditable="true">- Installare, se necessarie, solo estensioni da fonti verificate<br>- controllare e installare&nbsp;gli aggiornamenti di ogni estensione<br>- disattivarle quando si accede a siti riguardanti dati sensibili, economici o da tutelare<br>- proteggere i cookies&nbsp; importanti attivando le funzionalità avanzate&nbsp; (se disponibili) dei browser<br>- evitare di usare il browser con le estensioni (usarne un altro) quando si accede a siti riguardanti dati sensibili, economici o da tutelare</td><td contenteditable="true">- Autenticarsi con altro browser&nbsp; (o da altro dispositivo) e sostituire le credenziali compromesse<br>- attivare 2FA, se disponibile<br>- disinstallare l'estensione malevola (eventualmente reinstallare il browser), controllando che non sia sincronizzata in altri dispositivi<br>- controllare la presenza di processi o file malevoli nel sistema<br>- eventualmente ripristinare un backup di sistema</td><td style="align-items: center; gap: 12px; justify-content: center;">
+        <button onclick="toggleDone(this)" style="padding: 10px 10px;">stato</button>
+        <span class="done-no" ;="" style="padding-left: 10px"> ✗</span>
+      </td><td contenteditable="true"></td></tr><tr><td contenteditable="true">Browser (uso generico) 1</td><td contenteditable="true">Uso del browser per navigazione generica (ricerca informazioni, svago, etc.)</td><td><span class="static-value">0</span></td><td contenteditable="true">Il browser è compromesso da siti che eseguono codice malevolo o modificano le impostazioni del browser</td><td><span class="static-value">0</span></td><td class="result-cell"></td><td contenteditable="true">- Controllare che la navigazione sia protetta dall'antivirus<br>- usare estensioni o DNS che difendono da malware e siti pericolosi<br>- non ignorare gli avvisi di sicurezza del browser riguardanti navigazione e download<br>- non scaricare file sospetti (v. "Download e apertura file 1")<br>- non cliccare su link e pulsanti sospetti<br>- non eseguire codice o procedure (proposte da siti) senza conoscerne le conseguenze<br>- accertarsi che i captcha siano presentati da siti affidabili<br><br></td><td contenteditable="true">- Scansionare il sistema e se si notano processi sospetti, ripristinare un backup<br>- esportare i segnalibri ed eventuali password salvate e reinstallare il browser<br>- controllare se la sincronizzazione del browser ha alterato anche altri dispositivi</td><td style="align-items: center; gap: 12px; justify-content: center;">
+        <button onclick="toggleDone(this)" style="padding: 10px 10px;">stato</button>
+        <span class="done-no" ;="" style="padding-left: 10px"> ✗</span>
+      </td><td contenteditable="true"></td></tr><tr><td contenteditable="true">Clipboard 1</td><td contenteditable="true">Informazioni riservate o credenziali vengono copiate per essere incollate (restando disponibili nella clipboard)</td><td><span class="static-value">0</span></td><td contenteditable="true">Altri utenti o malware accedono a informazioni salvate nella clipboard</td><td><span class="static-value">0</span></td><td class="result-cell"></td><td contenteditable="true">- Disabilitare la cronologia della clipboard<br>- dopo aver copiato stringhe riservate, copiare stringhe casuali o non rilevanti</td><td contenteditable="true">- Controllare attività o accessi insoliti nei profili o siti riguardanti i dati nella clipboard<br>- sovrascrivere la clipboard, dopo averne disattivato la cronologia</td><td style="align-items: center; gap: 12px; justify-content: center;">
+        <button onclick="toggleDone(this)" style="padding: 10px 10px;">stato</button>
+        <span class="done-no" ;="" style="padding-left: 10px"> ✗</span>
+      </td><td contenteditable="true"></td></tr><tr><td contenteditable="true">Cloud 1</td><td contenteditable="true">File locali vengono sincronizzati in cartelle nel cloud</td><td><span class="static-value">0</span></td><td contenteditable="true">La compromissione o la cancellazione o la cifratura (ransomware) dei file locali viene replicata in quelli in cloud</td><td><span class="static-value">0</span></td><td class="result-cell"></td><td contenteditable="true">Impostare la sincronizzazione (se necessaria) con degli intervalli&nbsp; che consentano di salvaguardare le copie in cloud in caso di malware</td><td contenteditable="true">- Disconnettersi dalla rete oppure interrompere la sincronizzazione<br>- dopo aver sanificato il dispositivo,&nbsp;riportare i file in cloud a una versione precedente affidabile (se la funzione di versioning è disponibile) e riattivare la sincronizzazione<br>- sostituire le copie compromesse in cloud con una versione pulita dei file locali<br></td><td style="align-items: center; gap: 12px; justify-content: center;">
+        <button onclick="toggleDone(this)" style="padding: 10px 10px;">stato</button>
+        <span class="done-no" ;="" style="padding-left: 10px"> ✗</span>
+      </td><td contenteditable="true"></td></tr><tr><td contenteditable="true">Cloud 2</td><td contenteditable="true">File locali vengono sincronizzati in cartelle nel cloud</td><td><span class="static-value">0</span></td><td contenteditable="true">Accessi non autorizzati al cloud</td><td><span class="static-value">0</span></td><td class="result-cell"></td><td contenteditable="true">- Eseguire il logout e disconnettere i volumi in cloud, quando possibile<br>- disabilitare&nbsp; eventuale auto-completamento delle credenziali<br>- cifrare cartelle in cloud con password<br></td><td contenteditable="true">- Interrompere l'eventiale sincronizzazione dei file<br>- controllare i file sospetti rispetto alle loro versioni precedenti (se è disponibile il versioning)<br>-&nbsp; cercare di appurare modifiche o cancellazioni di file, confrontandoli con l'ultimo backup</td><td style="align-items: center; gap: 12px; justify-content: center;">
+        <button onclick="toggleDone(this)" style="padding: 10px 10px;">stato</button>
+        <span class="done-no" ;="" style="padding-left: 10px"> ✗</span>
+      </td><td contenteditable="true"></td></tr><tr><td contenteditable="true">Connessioni remote 1</td><td contenteditable="true">Necessità di connettersi da remoto al proprio dispositivo</td><td><span class="static-value">0</span></td><td contenteditable="true">La connessione viene intercettata da altri dispositivi interni o esterni alla rete</td><td><span class="static-value">0</span></td><td class="result-cell"></td><td contenteditable="true">Usare solo connessioni cifrate (VPN, SSH) o programmi&nbsp; di accesso da remoto che garantiscono cifratura</td><td contenteditable="true">- Interrompere la connessione sospetta<br>- disconnettersi dalla rete e controllare che non siano presenti processi o attività pianificate malevoli<br>- controllare la presenza di porte aperte o impostazioni sospette nel router<br>- eventualmente, monitorare il traffico e le connessioni con programmi o firewall<br></td><td style="align-items: center; gap: 12px; justify-content: center;">
+        <button onclick="toggleDone(this)" style="padding: 10px 10px;">stato</button>
+        <span class="done-no" ;="" style="padding-left: 10px"> ✗</span>
+      </td><td contenteditable="true"></td></tr><tr><td contenteditable="true">Dati e file "a riposo" 1</td><td contenteditable="true">Dati sono archiviati sul dispositivo</td><td><span class="static-value">0</span></td><td contenteditable="true">Un guasto meccanico o un malware compromettono l'integirtà, la riservatezza o la disponibilità dei dati</td><td><span class="static-value">0</span></td><td class="result-cell"></td><td contenteditable="true">- Organizzare backup che garantiscano almeno 3 esemplari di ciascun file, allocati in almeno 2 dispositivi differenti, di cui almeno 1&nbsp; tenuto offline e possibilmente 1 in altra località (ad es. cloud o altra dimora)<br>- controllare che i backup siano completi, affidabili (0 errori in caso di ripristino) ed eventualmente protetti da credenziali riservate</td><td contenteditable="true">- In caso di malware, isolare dalle reti (locale e Internet) il dispositivo compromesso e disconnettere eventuali memorie di archiviazione<br>- cercare di recuperare versioni precedenti dei dati&nbsp; dai dischi (con programmi o copie archiviate)<br>- attuare backup secondo regola 3-2-1-1-0 (v. azione preventiva ←)</td><td style="align-items: center; gap: 12px; justify-content: center;">
+        <button onclick="toggleDone(this)" style="padding: 10px 10px;">stato</button>
+        <span class="done-no" ;="" style="padding-left: 10px"> ✗</span>
+      </td><td contenteditable="true"></td></tr><tr><td contenteditable="true">DNS 1</td><td contenteditable="true">Utilizzo di un DNS ignoto o inaffidabile</td><td><span class="static-value">0</span></td><td contenteditable="true">Un server DNS malevolo indirizza il dispositivo verso siti malevoli (o viene usato per esfiltrare dati)</td><td><span class="static-value">0</span></td><td class="result-cell"></td><td contenteditable="true">Usare DNS sicuri ed eventualmente cifrati</td><td contenteditable="true">- Cambiare server DNS<br>- svuotare la cache DNS, sia del browser che del sistema operativo<br>- applicare filtri DNS per evitare siti malevoli<br>- controllare che i browser o altri programmi non abbiamo impostazioni DNS sospette</td><td style="align-items: center; gap: 12px; justify-content: center;">
+        <button onclick="toggleDone(this)" style="padding: 10px 10px;">stato</button>
+        <span class="done-no" ;="" style="padding-left: 10px"> ✗</span>
+      </td><td contenteditable="true"></td></tr><tr><td contenteditable="true">Download e apertura file 1</td><td contenteditable="true">Apertura di documenti o file acquisiti o scaricati da fonti non verificate</td><td><span class="static-value">0</span></td><td contenteditable="true">I file risultano essere malware e/o compromettono il sistema</td><td><span class="static-value">0</span></td><td class="result-cell"></td><td contenteditable="true">- Controllare l'affidabilità della fonte prima di accettare un file nel dispositivo<br>- scansionare il file con antivirus o servizi online (come VirusTotal)<br>- aprire il file in un ambiente protetto (sandbox o macchina virtuale) e controllarne i processi e le connessioni<br>- aprire il file (se proprio necessario) senza privilegi di amministratore, restando offline e dopo aver fatto un backup di sistema e dati</td><td contenteditable="true">- Spegnere il dispositivo, avviarlo con sistema operativo live (da altra periferica o disco) e scansionarlo con antimalware<br>- disconnetterlo da qualsiasi rete, rimuovere periferiche dati e poi scansionarlo con antimalware<br>- provare a recuperare i file importanti (su dispositivo esterno) e poi ripristinare un backup di sistema operativo e dati<br>- formattare il disco e reinstallare tutto da capo</td><td style="align-items: center; gap: 12px; justify-content: center;">
+        <button onclick="toggleDone(this)" style="padding: 10px 10px;">stato</button>
+        <span class="done-no" ;="" style="padding-left: 10px"> ✗</span>
+      </td><td contenteditable="true"></td></tr><tr><td contenteditable="true">Email 1</td><td contenteditable="true">Ricezione di mail sospette</td><td><span class="static-value">0</span></td><td contenteditable="true">Le mail contiene link a siti malevoli, di phishing o frodi</td><td><span class="static-value">0</span></td><td class="result-cell"></td><td contenteditable="true">- Controllare attentamente il mittente e il contenuto della mail<br>- non aprire direttamente i link contenuti nella mail, ma controllarli online (con motori di ricerca e servizi di analisi URL) o contattando direttamente la fonte<br>- non scaricare ed eseguire allegati senza averli prima analizzati (v. "Download e apertura file 1")<br>- diffidare da inviti ad agire con urgenza o per minaccia<br><br></td><td contenteditable="true">- In caso di phishing (con inserimento delle credenziali), provare a bloccare l'account compromesso e avvisare il servizio (banca o altro), cambiare la password e attivare 2FA<br>- in caso di link a sito malevolo, interrompere la connessione e scansionare il sistema<br>- in caso di download e apertura file sospetto (v. "Download e apertura file 1")</td><td style="align-items: center; gap: 12px; justify-content: center;">
+        <button onclick="toggleDone(this)" style="padding: 10px 10px;">stato</button>
+        <span class="done-no" ;="" style="padding-left: 10px"> ✗</span>
+      </td><td contenteditable="true"></td></tr><tr><td contenteditable="true">Email 2</td><td contenteditable="true">Ricezione di mail sospette</td><td><span class="static-value">0</span></td><td contenteditable="true">Le mail arriva da un account noto al destinatario ma compromesso</td><td><span class="static-value">0</span></td><td class="result-cell"></td><td contenteditable="true">Contattare personalmente il mittente (non tramite mail) in caso di contenuto della mail sospetto</td><td contenteditable="true">- In caso di phishing (con inserimento delle credenziali), provare a bloccare l'account compromesso e avvisare il servizio (banca o altro), cambiare la password e attivare 2FA<br>- in caso di link a sito malevolo, interrompere la connessione e scansionare il sistema<br>- in caso di download e apertura file sospetto (v. "Download e apertura file 1")</td><td style="align-items: center; gap: 12px; justify-content: center;">
+        <button onclick="toggleDone(this)" style="padding: 10px 10px;">stato</button>
+        <span class="done-no" ;="" style="padding-left: 10px"> ✗</span>
+      </td><td contenteditable="true"></td></tr><tr><td contenteditable="true">Intelligenza Artificiale 1</td><td contenteditable="true">Utilizzo di agenti o automazioni con IA per attività online</td><td><span class="static-value">0</span></td><td contenteditable="true">Dirottamento verso siti di phishing, uso improprio delle credenziali o di risorse economiche, divulgazione di dati riservati o pubblicazione di post inopportuni</td><td><span class="static-value">0</span></td><td class="result-cell"></td><td contenteditable="true">- Non automatizzare o delegare ad agenti AI la gestione di dati o accesso ad account o servizi importanti (economici, dati sensibili, etc.)<br>- implementare un "consenso utente" basato su un'interazione prima di operazioni rilevanti<br>- connettere l'AI ad account o mail secondari e non collegati a quelli primari</td><td contenteditable="true">- Interrompere l'esecuzione dell'automazione e procedere a disattivare l'agente AI<br>- controllare la cronologia per individuare i siti coinvolti<br>- bloccare gli eventuali pagamenti autorizzati<br>- cambiare le credenziali usate negli accessi automatizzati<br>- disabilitare eventuali avvii pianificati delle automazioni</td><td style="align-items: center; gap: 12px; justify-content: center;">
+        <button onclick="toggleDone(this)" style="padding: 10px 10px;">stato</button>
+        <span class="done-no" ;="" style="padding-left: 10px"> ✗</span>
+      </td><td contenteditable="true"></td></tr><tr><td contenteditable="true">Intelligenza Artificiale 2</td><td contenteditable="true">Utilizzo di agenti o automazioni con IA per attività offline o in locale</td><td><span class="static-value">0</span></td><td contenteditable="true">Alterazione impropria o cancellazione di dati, compromissione di database o della stabilità di sistema</td><td><span class="static-value">0</span></td><td class="result-cell"></td><td contenteditable="true">- Mantenere copie aggiornate di backup dei dati (regola 3-2-1-1-0), lasciandoli non accessibili all'agente o alla automazione<br>- limitare i permessi concessi, tutelando i file di sistema<br>- implementare un "consenso utente" basato su una interazione prima delle operazioni rilevanti<br>- accertarsi che l'agente o l'automazione non possa connettersi alla rete (se non necessario)</td><td contenteditable="true">- Interrompere i processi&nbsp; agentici o automatizza coinvolti e annullare quelli eventualmente pianificati<br>- individuare le modifiche indesiderate<br>- eventualmente ripristinare copie di backup</td><td style="align-items: center; gap: 12px; justify-content: center;">
+        <button onclick="toggleDone(this)" style="padding: 10px 10px;">stato</button>
+        <span class="done-no" ;="" style="padding-left: 10px"> ✗</span>
+      </td><td contenteditable="true"></td></tr><tr><td contenteditable="true">IoT, smart-home 1</td><td contenteditable="true">Utilizzo di dispositivi smart connessi alla rete domestica e a Internet</td><td><span class="static-value">0</span></td><td contenteditable="true">Vulnerabilità del dispositivo smart compromette la rete, consentendo l'accesso a malware o hacker</td><td><span class="static-value">0</span></td><td class="result-cell"></td><td contenteditable="true">- Mantenere i dispositivi smart in una sottorete separata<br>- aggiornare i firmware e i software dei dispositivi smart<br>- evitare di assegnare ai dispositivi smart la gestione di aspetti cruciali della vita domestica</td><td contenteditable="true">- Disconnettere il dispositivo dalla rete e eventualmente spegnerlo e resettarlo<br>- disconnettere periferiche di archiviazione dati e controllare eventuali accessi non autorizzati ad altri dispositivi<br>- verificare eventuali processi sospetti o attività pianificate insolite nei sistemi operativi</td><td style="align-items: center; gap: 12px; justify-content: center;">
+        <button onclick="toggleDone(this)" style="padding: 10px 10px;">stato</button>
+        <span class="done-no" ;="" style="padding-left: 10px"> ✗</span>
+      </td><td contenteditable="true"></td></tr><tr><td contenteditable="true">Memorie esterne (USB, NAS, etc.) 1</td><td contenteditable="true">Necessità di rimuovere dati personali e/o informazioni importanti da memorie destinate alla vendita o a essere prestate</td><td><span class="static-value">0</span></td><td contenteditable="true">Qualcuno recupera dati e informazioni dai dispositivi, nonostante la loro cancellazione</td><td><span class="static-value">0</span></td><td class="result-cell"></td><td contenteditable="true">Non prestare o smaltire dispositivi senza aver prima sovrascritto oppure reso irrecuperabili i dati da proteggere</td><td contenteditable="true">Valutare l'eventualità di modificare le credenziali a rischio di recupero dalle memorie dove erano salvate</td><td style="align-items: center; gap: 12px; justify-content: center;">
+        <button onclick="toggleDone(this)" style="padding: 10px 10px;">stato</button>
+        <span class="done-no" ;="" style="padding-left: 10px"> ✗</span>
+      </td><td contenteditable="true"></td></tr><tr><td contenteditable="true">Password 1</td><td contenteditable="true">Password riutilizzate in molteplici account</td><td><span class="static-value">0</span></td><td contenteditable="true">Violazione di account collegati con stesse credenziali</td><td><span class="static-value">0</span></td><td class="result-cell"></td><td contenteditable="true">Differenziare credenziali degli account rilevanti</td><td contenteditable="true">- Avvisare i contatti importanti<br>- recuperare o bloccare gli account compromessi</td><td style="align-items: center; gap: 12px; justify-content: center;">
+        <button onclick="toggleDone(this)" style="padding: 10px 10px;">stato</button>
+        <span class="done-no" ;="" style="padding-left: 10px"> ✗</span>
+      </td><td contenteditable="true"></td></tr><tr><td contenteditable="true">Password 2</td><td contenteditable="true">Password deboli e/o intuibili da domande sicurezza</td><td><span class="static-value">0</span></td><td contenteditable="true">Password decifrabile o facilmente violabile</td><td><span class="static-value">0</span></td><td class="result-cell"></td><td contenteditable="true">- Usare password o passphrase forte e bluffare su domande di recupero<br>- attivare 2FA</td><td contenteditable="true">- Controllare la presenza di accessi sospetti al servizio<br>- reimpostare nuova password/passphrase e nuove risposte di recupero<br>- attivare 2FA</td><td style="align-items: center; gap: 12px; justify-content: center;">
+        <button onclick="toggleDone(this)" style="padding: 10px 10px;">stato</button>
+        <span class="done-no" ;="" style="padding-left: 10px"> ✗</span>
+      </td><td contenteditable="true"></td></tr><tr><td contenteditable="true">Password 3</td><td contenteditable="true">Password non cambiate da molti anni</td><td><span class="static-value">0</span></td><td contenteditable="true">Password contenuta in data breach consultabili</td><td><span class="static-value">0</span></td><td class="result-cell"></td><td contenteditable="true">- Cambiare periodicamente le password<br>- controllare periodicamente database di data breach<br>- attivare 2FA</td><td contenteditable="true">- Controllare la presenza di accessi sospetti al servizio<br>- reimpostare una nuova password/passphrase<br>- attivare 2FA</td><td style="align-items: center; gap: 12px; justify-content: center;">
+        <button onclick="toggleDone(this)" style="padding: 10px 10px;">stato</button>
+        <span class="done-no" ;="" style="padding-left: 10px"> ✗</span>
+      </td><td contenteditable="true"></td></tr><tr><td contenteditable="true">Rete locale 1</td><td contenteditable="true">Rete condivisa con altri utenti</td><td><span class="static-value">0</span></td><td contenteditable="true">Accesso di altri utenti a risorse personali (tramite i loro dispositivi)</td><td><span class="static-value">0</span></td><td class="result-cell"></td><td contenteditable="true">- Disabilitare risorse condivise<br>- impostare rete guest per gli altri utenti<br>- controllare impostazioni firewall<br>- eventualmente disabilitare SSH, telnet e WPS</td><td contenteditable="true">- Disabilitare risorse condivise<br>- controllare modifiche (o rimozione) di file recenti o programmi<br>- ripristinare versioni precedenti dei file o usare backup<br></td><td style="align-items: center; gap: 12px; justify-content: center;">
+        <button onclick="toggleDone(this)" style="padding: 10px 10px;">stato</button>
+        <span class="done-no" ;="" style="padding-left: 10px"> ✗</span>
+      </td><td contenteditable="true"></td></tr><tr><td contenteditable="true">Reti esterne 1</td><td contenteditable="true">Utilizzo reti pubbliche o private non fidate</td><td><span class="static-value">0</span></td><td contenteditable="true">Intercettazione oppure re-indirizzamento di connessione e/o modifica dei dati in transito</td><td><span class="static-value">0</span></td><td class="result-cell"></td><td contenteditable="true">Utilizzo di una VPN o tethering / hotspot con dispositivo fidato</td><td contenteditable="true">- Disconnessione dalla rete<br>- cancellazione cache DNS e<br>riavvio browser (o uso altro browser) su connessione sicura<br>- controllare la presenza di accessi sospetti al servizio<br>- eventualmente modificare password/passphrase</td><td style="align-items: center; gap: 12px; justify-content: center;">
+        <button onclick="toggleDone(this)" style="padding: 10px 10px;">stato</button>
+        <span class="done-no" ;="" style="padding-left: 10px"> ✗</span>
+      </td><td contenteditable="true"></td></tr><tr><td contenteditable="true">Router 1</td><td contenteditable="true">Utilizzo di router WiFi con credenziali di accesso di default o prevedibili</td><td><span class="static-value">0</span></td><td contenteditable="true">Un attaccante recupera o indovina le credenziali e accede al router come admin</td><td><span class="static-value">0</span></td><td class="result-cell"></td><td contenteditable="true">- Cambiare le credenziali di admin di default<br>- accertarsi che l'accesso alla rete sia protetto da password solida<br>- disabilitare WPS</td><td contenteditable="true">- Staccare il router dalla rete e resettarlo fisicamente<br>- accedere via cavo, disattivare il WiFi e&nbsp;impostare nuove credenziali sicure (sia per l'admin che per la rete)</td><td style="align-items: center; gap: 12px; justify-content: center;">
+        <button onclick="toggleDone(this)" style="padding: 10px 10px;">stato</button>
+        <span class="done-no" ;="" style="padding-left: 10px"> ✗</span>
+      </td><td contenteditable="true"></td></tr><tr><td contenteditable="true">Sistema operativo 1</td><td contenteditable="true">Utilizzo di sistema operativo non aggiornato o obsoleto</td><td><span class="static-value">0</span></td><td contenteditable="true">Vulnerabilità o malware compromettono l'uso in sicurezza del sistema operativo</td><td><span class="static-value">0</span></td><td class="result-cell"></td><td contenteditable="true">- Aggiornare il sistema operativo tenendo attivi gli aggiornamenti automatici<br>- controllare periodicamente se la versione del sistema operativo richiede upgrade manuali o è giunta a fine supporto<br>- se lo sviluppo del sistema operativo non è più attivo, installarne uno attivamente sviluppato e aggiornato</td><td contenteditable="true">- Disconnettersi dalle reti (locale e Internet) e espellere periferiche di archiviazione esterne<br>- accedere al disco con sistemi operativi live per recuperare dati importanti non ancora presenti nei backup<br>- scansionare il dispositivo con antimalware e controllare processi sospetti<br>- controllare eventuali violazioni di account o dati usati tramite il dispositivo<br></td><td style="align-items: center; gap: 12px; justify-content: center;">
+        <button onclick="toggleDone(this)" style="padding: 10px 10px;">stato</button>
+        <span class="done-no" ;="" style="padding-left: 10px"> ✗</span>
+      </td><td contenteditable="true"></td></tr><tr><td contenteditable="true">Software 1</td><td contenteditable="true">Utilizzo di software non aggiornati o obsoleti</td><td><span class="static-value">0</span></td><td contenteditable="true">Vulnerabilità compromettono l'uso in sicurezza del software</td><td><span class="static-value">0</span></td><td class="result-cell"></td><td contenteditable="true">- Aggiornare i software tenendo attivi gli aggiornamenti automatici<br>- controllare periodicamente se la versione del software richiede upgrade manuali o è stata discontinuata<br>- se lo sviluppo del software non è più attivo, cercare programmi più recenti e attivi</td><td contenteditable="true">- Disconnettersi dalle reti (locale e Internet) e espellere periferiche di archiviazione esterne<br>- disinstallare il programma compromesso e rimuoverne tracce con programmi appositi<br>- scansionare il dispositivo con antimalware e controllare processi sospetti<br></td><td style="align-items: center; gap: 12px; justify-content: center;">
+        <button onclick="toggleDone(this)" style="padding: 10px 10px;">stato</button>
+        <span class="done-no" ;="" style="padding-left: 10px"> ✗</span>
+      </td><td contenteditable="true"></td></tr></tbody>
+			</table>
+		</div>
+	</div>
+
+	<footer id="footer">
+		<div class="footer-content">
+			<h3>ISTRUZIONI PER L'USO</h3>
+				<p><b>LEGENDA COLONNE</b><br>
+				<b>Rilevanza</b> = gravità dell'eventuale danno al verificarsi della minaccia - <b>Probabilità</b> = stima della possibilità che il danno accada - <b>Rischio</b> = valore Rilevanza x valore Probabilità - <b>Azione preventiva</b> = riduzione della probabilità del danno - <b>Reazione e recupero</b> = riduzione del danno al verificarsi della minaccia - <b>Conformità attuale</b> = stato attuale dell'applicazione di azioni preventive e della preparazione di reazione e recupero. <br><br>
+				<b>GESTIRE LA TABELLA</b><br>
+				MODIFICARLA E SALVARLA: <br>- cliccare su "Modifica valori"<br>- modificare i valori <u>secondo la propria situazione</u><br>- cliccare su "Blocca valori"<br>- salvare la pagina come "webpage completa".<br><br>
+				APRIRLA E ORDINARLA:<br>- cliccare su "Modifica valori" (anche se <i>non</i> si intende modificarla)<br>- cliccare su "Blocca valori"<br>- applicare eventuali ordinamenti.<br><br>Se la risoluzione del monitor non consente la visualizzazione completa della tabella, ridurre lo <b>zoom</b> premendo "CTRL" e "-".
+				<br><br>
+				<b>ESEMPI DI ASSEGNAZIONE VALORI</b><br>
+				<b>Probabilità:</b><br> <b>4</b><i> Molto probabile</i>: sicuramente accadrà circa ogni anno o prima<br> <b>3</b><i> Probabile</i>: potrebbe accadere entro due o tre anni<br> <b>2</b><i> Poco probabile</i>: potrebbe accadere in un futuro indefinito<br> <b>1</b><i> Improbabile</i>: potrebbe non accadere mai<br>
+				<b>Rilevanza:</b><br> <b>4</b><i> Danno grave</i>: perdita di dati personali, soldi o del controllo di un <i>account</i> importante<br> <b>3</b><i> Danno serio</i>: alterazione o perdita di <i>file</i> importanti, di <i>account</i> non cruciali, inaffidabilità della rete o del dispositivo<br> <b>2</b><i> Danno moderato</i>: necessaria reinstallazione, ripristino <i>backup</i> o modifica cautelativa delle credenziali<br> <b>1</b><i> Danno minimo</i>: è sufficiente ripristinare impostazioni di <i>default</i> ed eliminare processi fastidiosi ma non nocivi<br><br>
+				<b>Note</b><br>- Per <b>modificare i campi testuali</b> non è necessario cliccare su "Modifica valori", ma rimane necessario salvare poi il <i>file</i> per non perdere le modifiche<br>- prima di modificare il testo nelle colonne "Azione preventiva" o "Reazione e recupero", accertarsi della presenza di <b>testo nascosto</b>: è sufficiente cliccare nella cella e premere "CTRL" + "A", oppure selezionarne il contenuto trascinando il tasto sinistro.<br>- le colonne "Azione preventiva" e "Reazione e recupero" elencano azioni che possono risultare <b>adeguate o eccessive a seconda della situazione</b>, non è sempre necessario eseguirle tutte<br>- Dopo aver cliccato su <b>"Resetta tutto"</b> è sufficiente passare con il <i>mouse</i> sopra al testo delle colonne "Azione preventiva" o "Reazione e recupero" per nasconderlo nuovamente<br>- per <b>aggiungere nuove righe</b>, decommentare il ciclo "<i>for</i>" che inizia alla riga 390 del codice e termina alla 446, sostituendo al numero "10" (linea 390) il numero di righe da aggiungere; in seguito ricommentare le medesime righe.
+				</p>
+				<a id="header-link" class="back-to-top" href="file:///C:/FRACCU/Articles/Threat-Model/TEST/AudIT_28.html#top">
+				Indietro ↑</a>
+				<script>document.getElementById("header-link").href = "#top"</script>
+		</div>
+	</footer>
+
+<script>
+    const tbody = document.getElementById('tbody');
+    let isFrozen = false;
+
+    // Create 10 rows
+    //for (let i = 0; i < 10; i++) {
+    //  const tr = document.createElement('tr');
+	//
+    //  // 0 Contesto
+    //  const tdDesc = document.createElement('td');
+    //  tdDesc.contentEditable = true;
+    //  tr.appendChild(tdDesc);
+	//
+    //  // 1 Scenario
+    //  const tdCat = document.createElement('td');
+    //  tdCat.contentEditable = true;
+    //  tr.appendChild(tdCat);
+	//
+    //  // 2 Rilevanza
+    //  const tdA = document.createElement('td');
+    //  tdA.appendChild(createSelect());
+    //  tr.appendChild(tdA);
+	//
+    //  // 3 Minaccia
+    //  const tdUnit = document.createElement('td');
+    //  tdUnit.contentEditable = true;
+    //  tr.appendChild(tdUnit);
+	//
+    //  // 4 Probabilità
+    //  const tdB = document.createElement('td');
+    //  tdB.appendChild(createSelect());
+    //  tr.appendChild(tdB);
+	//
+    //  // 5 Rischio
+    //  const tdTotal = document.createElement('td');
+    //  tdTotal.className = 'result-cell';
+    //  tr.appendChild(tdTotal);
+	//
+    //  // 6 Azione preventiva
+    //  const tdStatus = document.createElement('td');
+    //  tdStatus.contentEditable = true;
+    //  tr.appendChild(tdStatus);
+	//
+    //  // 7 Reazione e recupero
+    //  const tdPrio = document.createElement('td');
+    //  tdPrio.contentEditable = true;
+    //  tr.appendChild(tdPrio);
+	//
+    //  // 8 Conformità
+    //  const tdAction = document.createElement('td');
+    //  tdAction.innerHTML = `
+    //    <button onclick="toggleDone(this)" style="padding: 10px 10px;">stato</button>
+    //    <span class="done-no"; style="padding-left: 10px"> ✗</span>
+    //  `;
+    //  //tdAction.style.display = 'flex';
+    //  tdAction.style.alignItems = 'center';
+    //  tdAction.style.gap = '12px';
+    //  tdAction.style.justifyContent = 'center';
+    //  tr.appendChild(tdAction);
+	//
+    //  tbody.appendChild(tr);
+    //}
+
+    function createSelect() {
+      const sel = document.createElement('select');
+      for (let n = 0; n <= 4; n++) {
+        const opt = document.createElement('option');
+        opt.value = n; opt.text = n;
+        sel.appendChild(opt);
+      }
+      return sel;
+    }
+
+	function toggleDone(btn) {
+	  const tr = btn.closest('tr');
+	  const tdDone = tr.cells[8];
+	  const span = tdDone.querySelector('span');
+	
+	  if (span.classList.contains('done-yes')) {
+	  	span.className = 'done-no';
+	  	span.textContent = ' ✗';
+	  } else {
+	  	span.className = 'done-yes';
+	  	span.textContent = ' ✓';
+	  }
+	}
+
+    function resetStatus() {
+      document.querySelectorAll('#tbody tr').forEach(tr => {
+        const span = tr.cells[8].querySelector('span');
+        span.className = 'done-no';
+        span.textContent = ' ✗';
+      });
+    }
+
+    function updateRow(tr) {
+      if (isFrozen) return;
+      const [selA, selB] = tr.querySelectorAll('select');
+      const totalCell = tr.cells[5];
+      const product = (parseInt(selA.value) || 0) * (parseInt(selB.value) || 0);
+      totalCell.textContent = product || '';
+      totalCell.className = 'result-cell';
+
+      if (product >= 9) totalCell.classList.add('total-9plus');
+      else if (product >= 5) totalCell.classList.add('total-5-8');
+      else if (product >= 1) totalCell.classList.add('total-0-4');
+	  
+	  const total = parseInt(tr.cells[5].textContent) || 0;  // Total is cells[5] (0-based)
+	  const prevCell = tr.cells[6];
+	  const respCell   = tr.cells[7];
+	  
+	  if (total > 0) {
+	  	prevCell.style.color = '#ffffff';
+	  	respCell.style.color   = '#ffffff';
+	  } else {
+	  	prevCell.style.color = '#1e1e1e';
+	  	respCell.style.color   = '#1e1e1e';
+		tr.dataset.hoverListenerAdded = 'true';
+	  }
+	  // Add hover listener
+	  if (tr.dataset.hoverListenerAdded) {
+		tr.addEventListener('mouseenter', () => {
+		  if (parseInt(tr.cells[5].textContent) > 0) {
+		    prevCell.style.color = '#ffffff';
+            respCell.style.color   = '#ffffff';
+          } else {
+            prevCell.style.color = '#2a2a2a';
+            respCell.style.color   = '#2a2a2a';
+          }
+		});
+        tr.addEventListener('mouseleave', () => {
+          if (parseInt(tr.cells[5].textContent) > 0) {
+		    prevCell.style.color = '#ffffff';
+            respCell.style.color   = '#ffffff';
+          } else {
+            prevCell.style.color = '#1e1e1e';
+            respCell.style.color   = '#1e1e1e';
+          }
+	    });
+	  }
+	}
+
+    tbody.addEventListener('change', e => {
+      if (isFrozen) return;
+      if (e.target.tagName === 'SELECT') {
+        updateRow(e.target.closest('tr'));
+      }
+    });
+
+    function freezeValues() {
+      isFrozen = true;
+      document.querySelector('.freeze').style.display = 'none';
+      document.querySelector('.edit').style.display = 'inline-block';
+      document.querySelectorAll('#tbody tr').forEach(tr => {
+        const selA = tr.cells[2].querySelector('select');
+        const selB = tr.cells[4].querySelector('select');
+        if (selA) tr.cells[2].innerHTML = `<span class="static-value">${selA.value}</span>`;
+        if (selB) tr.cells[4].innerHTML = `<span class="static-value">${selB.value}</span>`;
+      });
+    }
+
+    function editValues() {
+      isFrozen = false;
+      document.querySelector('.freeze').style.display = 'inline-block';
+      document.querySelector('.edit').style.display = 'none';
+      document.querySelectorAll('#tbody tr').forEach(tr => {
+        const valA = tr.cells[2].textContent.trim();
+        const valB = tr.cells[4].textContent.trim();
+        const selA = createSelect();
+        selA.value = valA || '0';
+        tr.cells[2].innerHTML = '';
+        tr.cells[2].appendChild(selA);
+        const selB = createSelect();
+        selB.value = valB || '0';
+        tr.cells[4].innerHTML = '';
+        tr.cells[4].appendChild(selB);
+        updateRow(tr);
+      });
+    }
+
+    function resetValues() {
+      document.querySelectorAll('#tbody tr').forEach(tr => {
+        if (!isFrozen) {
+          tr.querySelectorAll('select').forEach(s => s.value = 0);
+        } else {
+          tr.cells[2].innerHTML = `<span class="static-value">0</span>`;
+          tr.cells[4].innerHTML = `<span class="static-value">0</span>`;
+        }
+		tr.cells[5].textContent = '';
+		tr.cells[5].className = 'result-cell';
+        updateRow(tr);
+      });
+    }
+
+    function sortByTotal() {
+      document.querySelectorAll('#tbody tr').forEach(tr => updateRow(tr));
+      const rows = Array.from(tbody.querySelectorAll('tr'));
+      rows.sort((a, b) => (parseInt(b.cells[5].textContent) || 0) - (parseInt(a.cells[5].textContent) || 0));
+      rows.forEach(tr => tbody.appendChild(tr));
+    }
+
+	function resetSheet() {
+	document.querySelectorAll('#tbody tr').forEach(tr => {
+		if (!isFrozen) {
+		tr.querySelectorAll('select').forEach(s => s.value = 0);
+		} else {
+		tr.cells[2].innerHTML = `<span class="static-value">0</span>`;
+		tr.cells[4].innerHTML = `<span class="static-value">0</span>`;
+		}
+		tr.cells[5].textContent = '';
+		tr.cells[5].className = 'result-cell';
+		// Reset status icon to red cross
+		const span = tr.cells[8].querySelector('span');
+		span.className = 'done-no';
+		span.textContent = ' ✗';
+	});
+	sortRowsAlphabetically();
+	}
+
+	function sortByStatus() {
+		const rows = Array.from(tbody.querySelectorAll('tr'));
+		rows.sort((a, b) => {
+			const aDone = a.cells[8].querySelector('span').classList.contains('done-no') ? 0 : 1;
+			const bDone = b.cells[8].querySelector('span').classList.contains('done-no') ? 0 : 1;
+			return aDone - bDone;  // red (done-no) = 0 comes first
+		});
+		rows.forEach(tr => tbody.appendChild(tr));
+	}
+	
+	function sortAlphabetically() {
+		const rows = Array.from(tbody.querySelectorAll('tr'));
+		rows.sort((a, b) => {
+			const textA = a.cells[0].textContent.trim().toLowerCase();
+			const textB = b.cells[0].textContent.trim().toLowerCase();
+			return textA.localeCompare(textB);
+		});
+		rows.forEach(tr => tbody.appendChild(tr));
+	}
+
+    // Safety cleanup on load (for serialization issues)
+    window.addEventListener('load', function() {
+      const rows = Array.from(tbody.querySelectorAll('tr'));
+      const seen = new Set();
+      rows.forEach(tr => {
+        const key = tr.cells[0]?.textContent.trim() || '';
+        if (key && seen.has(key)) tr.remove();
+        else seen.add(key);
+      });
+    })
+
+</script>
+</body></html>
