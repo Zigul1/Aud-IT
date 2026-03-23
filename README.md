@@ -12,3 +12,5 @@ In breve, Aud-IT serve per **delineare il quadro attuale della situazione**, in 
 
 Il *file* comprende comunque delle **istruzioni per l'uso** dettagliate ed è inoltre **personalizzabile**: oltre a modificare quelli esistenti, possono essere aggiunti nuovi scenari e nuove minacce, basta agire leggermente sul codice HTML come indicato nelle istruzioani.
 Il *focus* è sulla **sicurezza** e sui **PC**, non sulla *privacy* o sugli *smartphone*, ma essendo modificabile potete arricchire e "tematizzare" il *file* come preferite.
+
+Se **non vengono visualizzati i pulsanti** "Istruzioni per l'uso" e "Indietro ↑", potrebbe essere necessario aggiungere il filtro "#@#.back-to-top:not(body):not(html)" nell'*adblocker* attivo (come uBlock Origin, ad esempio).
