@@ -204,12 +204,21 @@
 	/* When status is "no" → red text in first column */
 	tr:has(.done-no) td:nth-child(1) {
 	color: #f44336 !important;
+	
+	.toast {
+		transition: opacity 0.4s ease;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-8px);
+    }
 </style>
 </head>
 
 <body>
 <div class="page-header">
     <h1 style="text-align: center; margin-bottom: 0px;">Aud-IT</h1>
+	<div id="toast" class="toast" style="display: flex; justify-content: center; align-items: center; color: #DCC1A7"></div>
 	<nav style="margin-bottom: 10px;">
 		<a id="footer-link" href="" class="back-to-top">ISTRUZIONI PER L'USO</a>
 		<script>document.getElementById("footer-link").href = "#footer"</script>
@@ -219,7 +228,7 @@
 		<button class="sortAlphabetically" onclick="sortAlphabetically()">Ordina per contesto</button>
 		<button class="sort" onclick="sortByTotal()">Ordina per rischio</button>
 		<button class="sortByStatus" onclick="sortByStatus()">Ordina per conformità</button>
-		<button class="freeze" onclick="freezeValues()" style="display: none;"><b>Blocca valori</b></button>
+		<button class="freeze" id="freez" onclick="freezeValues()" style="display: none;"><b>Blocca valori</b></button>
 		<button class="edit" onclick="editValues()" style="display: inline-block;">Modifica valori</button>
 		<button class="reset-values" onclick="resetValues()">Azzera valori</button>
 		<button class="reset-status" onclick="resetStatus()">Azzera conformità</button>
@@ -375,7 +384,7 @@
 				<b>ESEMPI DI ASSEGNAZIONE VALORI</b><br>
 				<b>Probabilità:</b><br> <b>4</b><i> Molto probabile</i>: sicuramente accadrà circa ogni anno o prima<br> <b>3</b><i> Probabile</i>: potrebbe accadere entro due o tre anni<br> <b>2</b><i> Poco probabile</i>: potrebbe accadere in un futuro indefinito<br> <b>1</b><i> Improbabile</i>: potrebbe non accadere mai<br>
 				<b>Rilevanza:</b><br> <b>4</b><i> Danno grave</i>: perdita di dati personali, soldi o del controllo di un <i>account</i> importante<br> <b>3</b><i> Danno serio</i>: alterazione o perdita di <i>file</i> importanti, di <i>account</i> non cruciali, inaffidabilità della rete o del dispositivo<br> <b>2</b><i> Danno moderato</i>: necessaria reinstallazione, ripristino <i>backup</i> o modifica cautelativa delle credenziali<br> <b>1</b><i> Danno minimo</i>: è sufficiente ripristinare impostazioni di <i>default</i> ed eliminare processi fastidiosi ma non nocivi<br><br>
-				<b>Note</b><br>- Per <b>modificare i campi testuali</b> non è necessario cliccare su "Modifica valori", ma rimane necessario salvare poi il <i>file</i> per non perdere le modifiche<br>- prima di modificare il testo nelle colonne "Azione preventiva" o "Reazione e recupero", accertarsi della presenza di <b>testo nascosto</b>: è sufficiente cliccare nella cella e premere "CTRL" + "A", oppure selezionarne il contenuto trascinando il tasto sinistro.<br>- le colonne "Azione preventiva" e "Reazione e recupero" elencano azioni che possono risultare <b>adeguate o eccessive a seconda della situazione</b>, non è sempre necessario eseguirle tutte<br>- con i valori bloccati, dopo aver cliccato su <b>"Azzera valori"</b> o <b>"Resetta tutto"</b> è sufficiente passare con il <i>mouse</i> sopra il testo delle colonne "Azione preventiva" o "Reazione e recupero" per nasconderlo nuovamente<br>- per <b>aggiungere nuove righe</b>, decommentare il ciclo "<i>for</i>" che inizia alla riga 391 del codice e termina alla 447, sostituendo al numero "10" (linea 391) il numero di righe da aggiungere; in seguito ricommentare le medesime righe.
+				<b>Note</b><br>- Per <b>modificare i campi testuali</b> non è necessario cliccare su "Modifica valori", ma rimane necessario salvare poi il <i>file</i> per non perdere le modifiche<br>- prima di modificare il testo nelle colonne "Azione preventiva" o "Reazione e recupero", accertarsi della presenza di <b>testo nascosto</b>: è sufficiente cliccare nella cella e premere "CTRL" + "A", oppure selezionarne il contenuto trascinando il tasto sinistro.<br>- le colonne "Azione preventiva" e "Reazione e recupero" elencano azioni che possono risultare <b>adeguate o eccessive a seconda della situazione</b>, non è sempre necessario eseguirle tutte<br>- con i valori bloccati, dopo aver cliccato su <b>"Azzera valori"</b> o <b>"Resetta tutto"</b> è sufficiente passare con il <i>mouse</i> sopra il testo delle colonne "Azione preventiva" o "Reazione e recupero" per nasconderlo nuovamente<br>- per <b>aggiungere nuove righe</b>, decommentare il ciclo "<i>for</i>" che inizia alla riga 400 del codice e termina alla 456, sostituendo al numero "10" (linea 400) il numero di righe da aggiungere; in seguito ricommentare le medesime righe.
 				</p>
 				<a id="header-link" class="back-to-top" href="file:///C:/Users/Ale/Downloads/Aud-IT-main/Aud-IT.html#top">
 				Indietro ↑</a>
@@ -531,6 +540,25 @@
         updateRow(e.target.closest('tr'));
       }
     });
+
+	const btn = document.getElementById("freez");
+	const toast = document.getElementById("toast");
+	btn.addEventListener('click', () => {
+		const t = document.querySelector('.toast');
+		t.textContent = "Ricorda di salvare il file come webpage completa";
+		// Force opacity 0 first (so transition can happen)
+		t.style.opacity = '0';
+		t.style.pointerEvents = 'none';
+		// Small delay so browser registers the change
+		setTimeout(() => {
+			t.style.opacity = '1';
+			t.style.pointerEvents = 'auto';
+			setTimeout(() => {
+			t.style.opacity = '0';
+			t.style.pointerEvents = 'none';
+			}, 6000);
+		}, 20);
+	});
 
     function freezeValues() {
       isFrozen = true;
